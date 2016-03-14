@@ -48,7 +48,6 @@ def find_text(url_link):
     # reading the local cache
     local_path = build_local_path(url_link)
     if os.path.exists(local_path):
-
         return read_local(local_path)
     redirect = True
     try:
@@ -89,9 +88,9 @@ def format_link(link):
 
 
 if __name__ == '__main__':
-    first_text = read_local('raw.md')
-    all_links = find_links(first_text, total=False)
 
+    seed_text = find_text("List_of_algorithms")
+    all_links = find_links(seed_text, total=False)
     print('Gathering data...')
 
     data = {\
@@ -100,7 +99,7 @@ if __name__ == '__main__':
             "links" : find_links(find_text(k)) \
             } for k in list(all_links) if k and find_links(find_text(k), total=True)}
 
-    print('Saving data...')
+    print('Saving {} items'.format(len(data)))
 
     with open('final.json' , 'w') as fp:
         json.dump(data, fp)
