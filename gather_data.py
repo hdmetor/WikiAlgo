@@ -3,7 +3,11 @@ import os
 import json
 import logging
 import requests
+
 from collections import namedtuple
+
+import networkx as nx
+
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +20,10 @@ def find_links(text, total=True):
     if not text:
         return None
     all_links = re.findall('\[\[(.*?)\]\]', text)
-    #print(all_links)
     if total:
         return len(all_links)
     else:
-        return (clean_link(link) for link in all_links if clean_link(link))
+        return [clean_link(link) for link in all_links if clean_link(link)]
 
 def clean_link(link):
 
@@ -86,22 +89,57 @@ def format_link(link):
     'properly format link to create a valid wikipedia url'
     return link.rstrip().replace(" ", "_").replace("&minus;", "-")
 
+def wiki_to_human(text):
+    # Note: in general this might require mode cleaning
+    return text.replace("_", " ")
 
-if __name__ == '__main__':
-
-    seed_text = find_text("List_of_algorithms")
+def gather_data(root_link):
+    seed_text = find_text(root_link)
     all_links = find_links(seed_text, total=False)
-    print('Gathering data...')
+    print('Gathering data for {}'.format(human_form))
 
     data = {\
         k: {
             "text_len" : len(find_text(k)),
-            "links" : find_links(find_text(k)) \
+            "links" : find_links(find_text(k), total=False) \
             } for k in list(all_links) if k and find_links(find_text(k), total=True)}
 
+    return data
+
+
+def create_graph(data):
+
+    G = nx.DiGraph()
+    for nd, d in data.items():
+
+        edges = [[wiki_to_human(nd), wiki_to_human(i)] for i in d['links'] if i in data.keys()]
+        G.add_edges_from(edges)
+        G.add_node(nd)
+        G.node[nd]['weight'] = d['text_len']
+    return G
+
+
+def save_graph(graph, graph_name):
+    nx.write_graphml(graph, graph_name + '.graphml')
+
+if __name__ == '__main__':
+
+    starting_page = "List_of_algorithms"
+    human_form = wiki_to_human(starting_page)
+
+    data = gather_data(starting_page)
     print('Saving {} items'.format(len(data)))
 
-    with open('final.json' , 'w') as fp:
+    with open(human_form + ".json" , 'w') as fp:
         json.dump(data, fp)
 
     print('Saved')
+    print('Creating_graph')
+
+    graph = create_graph(data)
+    print('Saving graph')
+    save_graph(graph, human_form)
+
+
+
+
