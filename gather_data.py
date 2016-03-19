@@ -111,11 +111,11 @@ def create_graph(data):
 
     G = nx.DiGraph()
     for nd, d in data.items():
-
-        edges = [[wiki_to_human(nd), wiki_to_human(i)] for i in d['links'] if i in data.keys()]
+        clean_node = wiki_to_human(nd)
+        edges = [[clean_node, wiki_to_human(i)] for i in d['links'] if i in data.keys()]
         G.add_edges_from(edges)
-        G.add_node(nd)
-        G.node[nd]['weight'] = d['text_len']
+        G.add_node(clean_node)
+        G.node[clean_node]['weight'] = d['text_len']
     return G
 
 
